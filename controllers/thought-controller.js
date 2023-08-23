@@ -1,56 +1,71 @@
+const router = require('express').Router();
 const Thought = require('../models/Thought');
 
-const thoughtController = {
-  getAllThoughts: async (req, res) => {
-    try {
-      const thoughts = await Thought.find().populate('reactions');
-      res.json(thoughts);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get thoughts' });
-    }
-  },
+router.get('/', async (req, res) => {
+  try {
+    const thoughts = await Thought.find();
+    res.json(thoughts);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get thoughts' });
+  }
+});
 
-  addReaction: async (req, res) => {
-    try {
-      const thoughtId = req.params.thoughtId;
-      const { reactionBody, username } = req.body;
+router.post('/', async (req, res) => {
+  try {
+    const thought = await Thought.create(req.body);
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create thought' });
+  }
+});
 
-      const updatedThought = await Thought.findOneAndUpdate(
-        { _id: thoughtId },
-        {
-          $push: {
-            reactions: {
-              reactionBody,
-              username,
-              createdAt: new Date(), // Add a timestamp for the reaction
-            },
-          },
-        },
-        { new: true }
-      );
+router.get('/:id', async (req, res) => {
+  try {
+    const thought = await Thought.findById(req.params.id);
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get thought' });
+  }
+});
 
-      res.json(updatedThought);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to add reaction' });
-    }
-  },
+router.put('/:id', async (req, res) => {
+  try {
+    const thought = await Thought.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update thought' });
+  }
+});
 
-  removeReaction: async (req, res) => {
-    try {
-      const thoughtId = req.params.thoughtId;
-      const reactionId = req.params.reactionId;
+router.delete('/:id', async (req, res) => {
+  try {
+    const thought = await Thought.findByIdAndDelete(req.params.id);
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete thought' });
+  }
+});
 
-      const updatedThought = await Thought.findOneAndUpdate(
-        { _id: thoughtId },
-        { $pull: { reactions: { _id: reactionId } } }, // Remove the reaction with the given _id
-        { new: true }
-      );
+router.post('/:thoughtId/reactions', async (req, res) => {
+  try {
+    const thought = await Thought.findById(req.params.thoughtId);
+    thought.reactions.push(req.body);
+    await thought.save();
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add reaction' });
+  }
+});
 
-      res.json(updatedThought);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to remove reaction' });
-    }
-  },
-};
+router.delete('/:thoughtId/reactions/:reactionId', async (req, res) => {
+  try {
+    const thought = await Thought.findById(req.params.thoughtId);
+    thought.reactions.id(req.params.reactionId).remove();
+    await thought.save();
+    res.json(thought);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove reaction' });
+  }
+});
 
-module.exports = thoughtController;
+module.exports = router;

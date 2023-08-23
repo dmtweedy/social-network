@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const controllers = require('./controllers');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,14 +20,8 @@ mongoose.connection.once('open', () => {
   console.log('Connected to MongoDB database');
 });
 
-// Set up API routes
-const userRoutes = require('./routes/api/users');
-const thoughtRoutes = require('./routes/api/thoughts');
-const reactionRoutes = require('./routes/api/reactions');
-
-app.use('/api/users', userRoutes);
-app.use('/api/thoughts', thoughtRoutes);
-app.use('/api/reactions', reactionRoutes);
+app.use('/', controllers.userController);
+app.use('/', controllers.thoughtController);
 
 // Handle undefined routes
 app.use((req, res, next) => {

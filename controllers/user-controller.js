@@ -1,94 +1,71 @@
+const router = require('express').Router();
 const User = require('../models/User');
 
-const userController = {
-  getAllUsers: async (req, res) => {
-    try {
-      const users = await User.find().populate('thoughts friends');
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get users' });
-    }
-  },
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
 
-  getUserById: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const user = await User.findById(userId).populate('thoughts friends');
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get user' });
-    }
-  },
+router.post('/', async (req, res) => {
+  try {
+    const user = await User.create(req.body);
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
 
-  createUser: async (req, res) => {
-    try {
-      const { username, email } = req.body;
-      const newUser = await User.create({ username, email });
-      res.json(newUser);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to create user' });
-    }
-  },
+router.get('/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
 
-  updateUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
-        new: true,
-        runValidators: true,
-      });
-      res.json(updatedUser);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to update user' });
-    }
-  },
+router.put('/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
 
-  deleteUser: async (req, res) => {
-    try {
-      const userId = req.params.id;
-      await User.findByIdAndDelete(userId);
-      res.json({ message: 'User deleted' });
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to delete user' });
-    }
-  },
+router.delete('/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
 
-  addFriend: async (req, res) => {
-    try {
-      const userId = req.params.userId;
-      const friendId = req.params.friendId;
+router.post('/:userId/friends/:friendId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    user.friends.push(req.params.friendId);
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add friend' });
+  }
+});
 
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { $addToSet: { friends: friendId } }, // Using $addToSet to avoid duplicates
-        { new: true }
-      );
+router.delete('/:userId/friends/:friendId', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    user.friends.pull(req.params.friendId);
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove friend' });
+  }
+});
 
-      res.json(updatedUser);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to add friend' });
-    }
-  },
-
-  removeFriend: async (req, res) => {
-    try {
-      const userId = req.params.userId;
-      const friendId = req.params.friendId;
-
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { $pull: { friends: friendId } },
-        { new: true }
-      );
-
-      res.json(updatedUser);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to remove friend' });
-    }
-  },
-};
-
-module.exports = userController;
+module.exports = router;
