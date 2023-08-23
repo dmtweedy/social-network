@@ -4,21 +4,29 @@ const thoughtSchema = new mongoose.Schema({
   thoughtText: {
     type: String,
     required: true,
+    minlength: 1,
     maxlength: 280,
   },
   createdAt: {
     type: Date,
     default: Date.now,
-    get: (timestamp) => dateFormat(timestamp),
   },
   username: {
     type: String,
     required: true,
   },
-  reactions: [ReactionSchema],
-});
+  reactions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Reaction',
+    },
+  ],
+  },
+  {
+    collection: 'thoughts', // Collection name
+  }
+);
 
-// Virtual to get reactionCount
 thoughtSchema.virtual('reactionCount').get(function () {
   return this.reactions.length;
 });
