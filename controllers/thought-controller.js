@@ -79,11 +79,20 @@ router.delete('/:thoughtId/reactions/:reactionId', async (req, res) => {
       return res.status(404).json({ error: 'Thought not found' });
     }
 
-    thought.reactions.id(req.params.reactionId).remove();
+    const reactionToRemove = thought.reactions.find(
+      (reaction) => reaction._id.toString() === req.params.reactionId
+    );
+    
+    if (!reactionToRemove) {
+      return res.status(404).json({ error: 'Reaction not found in the thought' });
+    }
+    thought.reactions.pull(reactionToRemove);
     await thought.save();
-    res.json(thought);
+
+    res.json({ message: 'Reaction removed successfully', thought });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to remove reaction' });
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred' });
   }
 });
 
