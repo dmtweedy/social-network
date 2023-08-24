@@ -49,10 +49,18 @@ router.delete('/:id', async (req, res) => {
 router.post('/:userId/friends/:friendId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
-    user.friends.push(req.params.friendId);
+    const friend = await User.findById(req.params.friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ error: 'User or friend not found' });
+    }
+
+    user.friends.push(friend._id);
     await user.save();
+
     res.json(user);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to add friend' });
   }
 });
@@ -60,11 +68,19 @@ router.post('/:userId/friends/:friendId', async (req, res) => {
 router.delete('/:userId/friends/:friendId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
-    user.friends.pull(req.params.friendId);
+    const friend = await User.findById(req.params.friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ error: 'User or friend not found' });
+    }
+
+    user.friends = user.friends.filter(f => !f.equals(friend._id));
     await user.save();
+
     res.json(user);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to remove friend' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete friend' });
   }
 });
 

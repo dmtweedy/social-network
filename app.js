@@ -18,8 +18,8 @@ mongoose.connection.once('open', () => {
   console.log('Connected to MongoDB database');
 });
 
-app.use('/', controllers.userController);
-app.use('/', controllers.thoughtController);
+app.use('/api/users', controllers.userController);
+app.use('/api/thoughts', controllers.thoughtController);
 
 // Handle undefined routes
 app.use((req, res, next) => {

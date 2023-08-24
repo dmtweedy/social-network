@@ -1,54 +1,75 @@
 const mongoose = require('mongoose');
 const User = require('./models/User');
-const Reaction = require('./models/Reaction');
 const Thought = require('./models/Thought');
 
-mongoose.connect('mongodb://127.0.0.1:27017/social-network', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Function to drop and recreate the database
+async function dropAndRecreateDatabase() {
+  try {
+    await mongoose.connect('mongodb://127.0.0.1:27017/social-network', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    // Drop the existing database
+    await mongoose.connection.db.dropDatabase();
+    console.log('Database dropped and recreated');
+  } catch (error) {
+    console.error('Error dropping and recreating database:', error);
+  } finally {
+    mongoose.disconnect(); // Disconnect from the database
+  }
+}
 
 // Sample user data
 const users = [
   { username: 'dmtweedy', email: 'damon.tweedy@yahoo.com' },
-  { username: 'Dizzy', email: 'dizzy@bestpets.com' }
+  { username: 'dizzy1', email: 'dizzy@bestpets.com' }
 ];
 
-// Sample reaction data
-const reactions = [
-  { type: 'like', emoji: '👍' },
-  { type: 'love', emoji: '❤️' }
-];
-
-// Sample thought data
+// Sample thought data with reactions
 const thoughts = [
-  { content: 'I love this', userId: 1 },
-  { content: 'I hate this', userId: 2 }
+  {
+    thoughtText: 'I love this',
+    username: 'dmtweedy',
+    reactions: [
+      { reactionBody: 'I really do!', username: 'dmtweedy' },
+      { reactionBody: 'I disagree!', username: 'dizzy1' }
+    ],
+  },
+  {
+    thoughtText: 'I hate this',
+    username: 'dizzy1',
+    reactions: [
+      { reactionBody: 'Not a fan', username: 'dizzy1' },
+      { reactionBody: 'Lighten up.', username: 'dmtweedy' }
+    ],
+  },
 ];
 
 (async () => {
   try {
+    await dropAndRecreateDatabase(); // Drop and recreate the database
+
+    // Connect to the database
+    await mongoose.connect('mongodb://127.0.0.1:27017/social-network', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
     // Seed users
     const createdUsers = await User.create(users);
 
-    // Seed thoughts
-    const createdThoughts = await Thought.create(
-      thoughts.map((thought, index) => ({ ...thought, author: createdUsers[index]._id }))
-    );
+    // Seed thoughts and associate them with users
+    const createdThoughts = await Thought.create(thoughts);
 
-    // Seed reactions
-    const createdReactions = await Reaction.create(
-      reactions.map((reaction, index) => ({
-        ...reaction,
-        thought: createdThoughts[index]._id,
-        user: createdUsers[index]._id,
-      }))
-    );
+    // Update user's thoughts array with thought IDs
+    for (const user of createdUsers) {
+      const userThoughts = createdThoughts.filter(thought => thought.username === user.username);
+      user.thoughts = userThoughts.map(thought => thought._id);
+      await user.save();
+    }
 
-    console.log('Data seeded successfully');
-
-    // Log created reactions
-    console.log('Created reactions:', createdReactions);
+    console.log('Data seeded successfully', createdUsers, createdThoughts);
   } catch (error) {
     console.error('Error seeding data:', error);
   } finally {

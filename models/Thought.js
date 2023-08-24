@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Reaction = require('./Reaction');
 
 const thoughtSchema = new mongoose.Schema({
   thoughtText: {
@@ -15,17 +16,8 @@ const thoughtSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  reactions: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Reaction',
-    },
-  ],
-  },
-  {
-    collection: 'thoughts', // Collection name
-  }
-);
+  reactions: [Reaction.schema],
+});
 
 thoughtSchema.virtual('reactionCount').get(function () {
   return this.reactions.length;
